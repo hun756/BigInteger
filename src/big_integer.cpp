@@ -114,37 +114,37 @@ BigInteger operator /=(const BigInteger& lhs, const BigInteger& rhs)
 }
 
 
-BigInteger operator <(const BigInteger& lhs, const BigInteger& rhs) 
+bool operator <(const BigInteger& lhs, const BigInteger& rhs) 
 {
 
 }
 
 
-BigInteger operator >=(const BigInteger& lhs, const BigInteger& rhs) 
+bool operator >=(const BigInteger& lhs, const BigInteger& rhs) 
 {
 
 }
 
 
-BigInteger operator >(const BigInteger& lhs, const BigInteger& rhs) 
+bool operator >(const BigInteger& lhs, const BigInteger& rhs) 
 {
 
 }
 
 
-BigInteger operator >=(const BigInteger& lhs, const BigInteger& rhs) 
+bool operator >=(const BigInteger& lhs, const BigInteger& rhs) 
 {
 
 }
 
 
-BigInteger operator ==(const BigInteger& lhs, const BigInteger& rhs) 
+bool operator ==(const BigInteger& lhs, const BigInteger& rhs) 
 {
-
+    
 }
 
 
-BigInteger operator !=(const BigInteger& lhs, const BigInteger& rhs) 
+bool operator !=(const BigInteger& lhs, const BigInteger& rhs) 
 {
 
 }

@@ -92,12 +92,12 @@ public:
     friend BigInteger operator *=(const BigInteger& lhs, const BigInteger& rhs);
     friend BigInteger operator /=(const BigInteger& lhs, const BigInteger& rhs);
     
-    friend BigInteger operator <(const BigInteger& lhs, const BigInteger& rhs);
-    friend BigInteger operator >=(const BigInteger& lhs, const BigInteger& rhs);
-    friend BigInteger operator >(const BigInteger& lhs, const BigInteger& rhs);
-    friend BigInteger operator >=(const BigInteger& lhs, const BigInteger& rhs);
-    friend BigInteger operator ==(const BigInteger& lhs, const BigInteger& rhs);
-    friend BigInteger operator !=(const BigInteger& lhs, const BigInteger& rhs);
+    friend bool operator <(const BigInteger& lhs, const BigInteger& rhs);
+    friend bool operator >=(const BigInteger& lhs, const BigInteger& rhs);
+    friend bool operator >(const BigInteger& lhs, const BigInteger& rhs);
+    friend bool operator >=(const BigInteger& lhs, const BigInteger& rhs);
+    friend bool operator ==(const BigInteger& lhs, const BigInteger& rhs);
+    friend bool operator !=(const BigInteger& lhs, const BigInteger& rhs);
 
     friend BigInteger operator ++(BigInteger& biObj);    
     friend BigInteger operator ++(BigInteger& biObj, int);    
