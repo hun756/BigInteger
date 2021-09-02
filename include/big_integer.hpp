@@ -65,7 +65,7 @@ public:
      * 
      * @param biObj 
      */
-    BigInteger(const BigInteger&& biObj);
+    BigInteger(BigInteger&& biObj);
 
     
     /**
@@ -74,34 +74,187 @@ public:
      * @param biObj 
      * @return BigInteger&& 
      */
-    BigInteger&& operator =(const BigInteger&& biObj);
+    BigInteger&& operator =(BigInteger&& biObj);
 
     ///< -- Life Time Management End --
 
 
     ///< --  Operator Overlodings --
 
+    /**
+     * @brief 
+     * 
+     * @param lhs 
+     * @param rhs 
+     * @return BigInteger 
+     */
     friend BigInteger operator +(const BigInteger& lhs, const BigInteger& rhs);
+
+    /**
+     * @brief 
+     * 
+     * @param lhs 
+     * @param rhs 
+     * @return BigInteger 
+     */
     friend BigInteger operator -(const BigInteger& lhs, const BigInteger& rhs);
+
+    /**
+     * @brief 
+     * 
+     * @param lhs 
+     * @param rhs 
+     * @return BigInteger 
+     */
     friend BigInteger operator *(const BigInteger& lhs, const BigInteger& rhs);
+
+    /**
+     * @brief 
+     * 
+     * @param lhs 
+     * @param rhs 
+     * @return BigInteger 
+     */
     friend BigInteger operator /(const BigInteger& lhs, const BigInteger& rhs);
+
+    /**
+     * @brief 
+     * 
+     * @param lhs 
+     * @param rhs 
+     * @return BigInteger 
+     */
     friend BigInteger operator %(const BigInteger& lhs, const BigInteger& rhs);
 
+
+    /**
+     * @brief 
+     * 
+     * @param lhs 
+     * @param rhs 
+     * @return BigInteger 
+     */
     friend BigInteger operator +=(const BigInteger& lhs, const BigInteger& rhs);
+
+    /**
+     * @brief 
+     * 
+     * @param lhs 
+     * @param rhs 
+     * @return BigInteger 
+     */
     friend BigInteger operator -=(const BigInteger& lhs, const BigInteger& rhs);
+
+    /**
+     * @brief 
+     * 
+     * @param lhs 
+     * @param rhs 
+     * @return BigInteger 
+     */
     friend BigInteger operator *=(const BigInteger& lhs, const BigInteger& rhs);
+
+    /**
+     * @brief 
+     * 
+     * @param lhs 
+     * @param rhs 
+     * @return BigInteger 
+     */
     friend BigInteger operator /=(const BigInteger& lhs, const BigInteger& rhs);
     
+
+    /**
+     * @brief 
+     * 
+     * @param lhs 
+     * @param rhs 
+     * @return true 
+     * @return false 
+     */
     friend bool operator <(const BigInteger& lhs, const BigInteger& rhs);
-    friend bool operator >=(const BigInteger& lhs, const BigInteger& rhs);
+
+    /**
+     * @brief 
+     * 
+     * @param lhs 
+     * @param rhs 
+     * @return true 
+     * @return false 
+     */
+    friend bool operator <=(const BigInteger& lhs, const BigInteger& rhs);
+
+    /**
+     * @brief 
+     * 
+     * @param lhs 
+     * @param rhs 
+     * @return true 
+     * @return false 
+     */
     friend bool operator >(const BigInteger& lhs, const BigInteger& rhs);
+
+    /**
+     * @brief 
+     * 
+     * @param lhs 
+     * @param rhs 
+     * @return true 
+     * @return false 
+     */
     friend bool operator >=(const BigInteger& lhs, const BigInteger& rhs);
+
+    /**
+     * @brief 
+     * 
+     * @param lhs 
+     * @param rhs 
+     * @return true 
+     * @return false 
+     */
     friend bool operator ==(const BigInteger& lhs, const BigInteger& rhs);
+
+    /**
+     * @brief 
+     * 
+     * @param lhs 
+     * @param rhs 
+     * @return true 
+     * @return false 
+     */
     friend bool operator !=(const BigInteger& lhs, const BigInteger& rhs);
 
+
+    /**
+     * @brief 
+     * 
+     * @param biObj 
+     * @return BigInteger 
+     */
     friend BigInteger operator ++(BigInteger& biObj);    
+
+    /**
+     * @brief 
+     * 
+     * @param biObj 
+     * @return BigInteger 
+     */
     friend BigInteger operator ++(BigInteger& biObj, int);    
+
+    /**
+     * @brief 
+     * 
+     * @param biObj 
+     * @return BigInteger 
+     */
     friend BigInteger operator --(BigInteger& biObj);
+
+    /**
+     * @brief 
+     * 
+     * @param biObj 
+     * @return BigInteger 
+     */
     friend BigInteger operator --(BigInteger& biObj, int);    
 
     ///< --  Operator Overlodings End --
@@ -123,6 +276,23 @@ public:
      * @return std::unique_ptr<std::byte[]> 
      */
     std::unique_ptr<std::byte[]> toByteArray();
+
+
+    /**
+     * @brief Get the Sign object
+     * 
+     * @return true 
+     * @return false 
+     */
+    bool getSign() const;
+
+
+    /**
+     * @brief Set the Sign object
+     * 
+     * @param signVal 
+     */
+    void setSign(bool signVal);
 
     ///< -- Other Methods End --
 
