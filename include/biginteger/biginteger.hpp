@@ -34,31 +34,54 @@ public:
                                       bool is_negative, int base)
     {
         if (digits.empty() || (digits.size() == 1 && digits[0] == 0))
+        {
+            if (base == 16)
+                return "0x0";
+            else if (base == 8)
+                return "00";
+            else if (base == 2)
+                return "0b0";
             return "0";
+        }
 
         std::string result;
-        result.reserve(digits.size() * 10);
-
         if (is_negative)
             result += '-';
 
-        std::vector<uint32_t> temp = digits;
-        std::string temp_result;
-        while (!temp.empty() && !(temp.size() == 1 && temp[0] == 0))
-        {
-            uint32_t remainder = divide_by_base(temp, base);
-            temp_result += digit_to_char(remainder);
-        }
-        std::reverse(temp_result.begin(), temp_result.end());
-
-        result += temp_result;
-
         if (base == 16)
-            result = "0x" + result;
-        else if (base == 8)
-            result = "0" + result;
-        else if (base == 2)
-            result = "0b" + result;
+        {
+            result += "0x";
+            for (size_t i = 0; i < digits.size(); ++i)
+            {
+                if (i == 0)
+                {
+                    std::string hex = to_hex(digits[i]);
+                    result += hex;
+                }
+                else
+                {
+                    std::string hex = to_hex(digits[i]);
+                    result += std::string(8 - hex.length(), '0') + hex;
+                }
+            }
+        }
+        else
+        {
+            if (base == 8)
+                result += "0";
+            else if (base == 2)
+                result += "0b";
+
+            std::vector<uint32_t> temp = digits;
+            std::string temp_result;
+            while (!temp.empty() && !(temp.size() == 1 && temp[0] == 0))
+            {
+                uint32_t remainder = divide_by_base(temp, base);
+                temp_result += digit_to_char(remainder);
+            }
+            std::reverse(temp_result.begin(), temp_result.end());
+            result += temp_result;
+        }
 
         return result;
     }
@@ -107,10 +130,10 @@ private:
     static uint32_t divide_by_base(std::vector<uint32_t>& digits, uint32_t base)
     {
         uint64_t remainder = 0;
-        for (auto it = digits.begin(); it != digits.end(); ++it)
+        for (size_t i = 0; i < digits.size(); ++i)
         {
-            uint64_t current = remainder * NumericConstants::BASE + *it;
-            *it = static_cast<uint32_t>(current / base);
+            uint64_t current = remainder * NumericConstants::BASE + digits[i];
+            digits[i] = static_cast<uint32_t>(current / base);
             remainder = current % base;
         }
 
@@ -118,6 +141,20 @@ private:
             digits.erase(digits.begin());
 
         return static_cast<uint32_t>(remainder);
+    }
+
+    static std::string to_hex(uint32_t value)
+    {
+        if (value == 0)
+            return "0";
+        std::string hex;
+        while (value > 0)
+        {
+            uint32_t digit = value % 16;
+            hex = digit_to_char(digit) + hex;
+            value /= 16;
+        }
+        return hex;
     }
 
     static void multiply_by_base(std::vector<uint32_t>& digits, uint32_t base)

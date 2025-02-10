@@ -35,3 +35,31 @@ TEST(StringConversionTest, ToStringBaseDecimal)
     std::vector<uint32_t> digits5 = {123, 456};
     EXPECT_EQ(StringConversion::to_string_base(digits5, false, 10), "123000000456");
 }
+
+TEST(StringConversionTest, ToStringBaseHexadecimal) {
+    using namespace Numerics::detail;
+    
+    // basic case
+    std::vector<uint32_t> digits1 = {255, 0};
+    EXPECT_EQ(StringConversion::to_string_base(digits1, false, 16), "0xff00000000");
+
+    // zero
+    std::vector<uint32_t> digits2 = {0};
+    EXPECT_EQ(StringConversion::to_string_base(digits2, false, 16), "0x0");
+
+    // small number
+    std::vector<uint32_t> digits3 = {10};
+    EXPECT_EQ(StringConversion::to_string_base(digits3, false, 16), "0xa");
+
+    // max uint32
+    std::vector<uint32_t> digits4 = {0xFFFFFFFF};
+    EXPECT_EQ(StringConversion::to_string_base(digits4, false, 16), "0xffffffff");
+
+    // negative number
+    std::vector<uint32_t> digits5 = {255};
+    EXPECT_EQ(StringConversion::to_string_base(digits5, true, 16), "-0xff");
+
+    // multiple elements
+    std::vector<uint32_t> digits6 = {0xABCD, 0xEF12};
+    EXPECT_EQ(StringConversion::to_string_base(digits6, false, 16), "0xabcd0000ef12");
+}
