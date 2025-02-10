@@ -107,19 +107,17 @@ private:
     static uint32_t divide_by_base(std::vector<uint32_t>& digits, uint32_t base)
     {
         uint64_t remainder = 0;
-        for (size_t i = 0; i < digits.size(); ++i)
+        for (auto it = digits.begin(); it != digits.end(); ++it)
         {
-            uint64_t current = remainder * NumericConstants::BASE + digits[i];
-            digits[i] = static_cast<uint32_t>(current / base);
+            uint64_t current = remainder * NumericConstants::BASE + *it;
+            *it = static_cast<uint32_t>(current / base);
             remainder = current % base;
         }
 
-        while (!digits.empty() && digits.front() == 0 &&
-               digits.size() > 1) // keep at least one zero if the number is 0
+        while (digits.size() > 1 && digits.front() == 0)
             digits.erase(digits.begin());
 
-        return static_cast<uint32_t>(remainder %
-                                     0xFFFFFFFF); // ensure uint32_t range
+        return static_cast<uint32_t>(remainder);
     }
 
     static void multiply_by_base(std::vector<uint32_t>& digits, uint32_t base)
