@@ -124,3 +124,138 @@ TEST(HexTablesMultiCharTest, DifferentCharTypes)
     EXPECT_TRUE(hex::detail::hex_tables::is_valid_hex_digit(U'c'));
     EXPECT_FALSE(hex::detail::hex_tables::is_valid_hex_digit(U'Z'));
 }
+
+// ==================================================================================================
+// TEST HEX Buffer
+// ==================================================================================================
+
+class HexBufferTest : public ::testing::Test
+{
+protected:
+    hex::detail::hex_buffer<char> buffer;
+};
+
+TEST_F(HexBufferTest, InitialState)
+{
+    EXPECT_TRUE(buffer.empty());
+    EXPECT_EQ(buffer.size(), 0);
+    EXPECT_EQ(buffer.capacity(), 64);
+}
+
+TEST_F(HexBufferTest, PushBackBasic)
+{
+    EXPECT_TRUE(buffer.push_back('A'));
+    EXPECT_EQ(buffer.size(), 1);
+    EXPECT_FALSE(buffer.empty());
+    EXPECT_EQ(buffer.front(), 'A');
+    EXPECT_EQ(buffer.back(), 'A');
+}
+
+TEST_F(HexBufferTest, PushBackMultiple)
+{
+    const std::string test = "Hello";
+    for (char c : test)
+    {
+        EXPECT_TRUE(buffer.push_back(c));
+    }
+
+    EXPECT_EQ(buffer.size(), test.length());
+    EXPECT_EQ(buffer.front(), 'H');
+    EXPECT_EQ(buffer.back(), 'o');
+}
+
+TEST_F(HexBufferTest, CapacityLimit)
+{
+    // Fill to capacity
+    for (size_t i = 0; i < buffer.capacity(); ++i)
+    {
+        EXPECT_TRUE(buffer.push_back('X'));
+    }
+
+    // Try to exceed capacity
+    EXPECT_FALSE(buffer.push_back('Y'));
+    EXPECT_EQ(buffer.size(), buffer.capacity());
+}
+
+TEST_F(HexBufferTest, Clear)
+{
+    buffer.push_back('A');
+    buffer.push_back('B');
+
+    buffer.clear();
+    EXPECT_TRUE(buffer.empty());
+    EXPECT_EQ(buffer.size(), 0);
+}
+
+TEST_F(HexBufferTest, PopBack)
+{
+    buffer.push_back('A');
+    buffer.push_back('B');
+
+    buffer.pop_back();
+    EXPECT_EQ(buffer.size(), 1);
+    EXPECT_EQ(buffer.back(), 'A');
+
+    buffer.pop_back();
+    EXPECT_TRUE(buffer.empty());
+
+    // Pop from empty buffer should not crash
+    buffer.pop_back();
+    EXPECT_TRUE(buffer.empty());
+}
+
+TEST_F(HexBufferTest, Iterator)
+{
+    const std::string test = "Test";
+    for (char c : test)
+    {
+        buffer.push_back(c);
+    }
+
+    // Forward iteration
+    std::string result;
+    for (auto it = buffer.begin(); it != buffer.end(); ++it)
+    {
+        result += *it;
+    }
+    EXPECT_EQ(result, test);
+
+    // Range-based for loop
+    result.clear();
+    for (char c : buffer)
+    {
+        result += c;
+    }
+    EXPECT_EQ(result, test);
+}
+
+TEST_F(HexBufferTest, View)
+{
+    const std::string test = "View";
+    for (char c : test)
+    {
+        buffer.push_back(c);
+    }
+
+    auto view = buffer.view();
+    EXPECT_EQ(view.size(), test.length());
+
+    std::string result(view.begin(), view.end());
+    EXPECT_EQ(result, test);
+}
+
+TEST_F(HexBufferTest, ConstView)
+{
+    const std::string test = "ConstView";
+    for (char c : test)
+    {
+        buffer.push_back(c);
+    }
+
+    const auto& const_buffer = buffer;
+    auto view = const_buffer.view();
+    EXPECT_EQ(view.size(), test.length());
+
+    std::string result(view.begin(), view.end());
+    EXPECT_EQ(result, test);
+}

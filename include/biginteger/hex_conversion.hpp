@@ -3,6 +3,7 @@
 
 #include <array>
 #include <cstdint>
+#include <span>
 #include <type_traits>
 
 namespace hex
@@ -68,6 +69,104 @@ public:
         const auto uc = static_cast<std::make_unsigned_t<CharT>>(c);
         return uc < table_size && decode_table<CharT>[uc] != 0xFF;
     }
+};
+
+template <typename T>
+class hex_buffer
+{
+    static_assert(std::is_trivially_copyable_v<T>,
+                  "hex_buffer can only store trivially copyable types");
+
+    // 64-byte cache line alignment
+    static constexpr size_t buffer_size = 64;
+    alignas(64) std::array<T, buffer_size> data_{};
+    size_t size_{0};
+
+public:
+    // Type definitions for STL container requirements
+    using value_type = T;
+    using size_type = size_t;
+    using difference_type = ptrdiff_t;
+    using reference = value_type&;
+    using const_reference = const value_type&;
+    using pointer = value_type*;
+    using const_pointer = const value_type*;
+    using iterator = pointer;
+    using const_iterator = const_pointer;
+
+    constexpr hex_buffer() noexcept = default;
+
+    [[nodiscard]] constexpr size_type size() const noexcept { return size_; }
+
+    [[nodiscard]] constexpr bool empty() const noexcept { return size_ == 0; }
+
+    [[nodiscard]] constexpr size_type capacity() const noexcept { return buffer_size; }
+
+    [[nodiscard]] constexpr size_type max_size() const noexcept { return buffer_size; }
+
+    [[nodiscard]] constexpr reference operator[](size_type pos) noexcept { return data_[pos]; }
+
+    [[nodiscard]] constexpr const_reference operator[](size_type pos) const noexcept
+    {
+        return data_[pos];
+    }
+
+    [[nodiscard]] constexpr reference front() noexcept { return data_[0]; }
+
+    [[nodiscard]] constexpr const_reference front() const noexcept { return data_[0]; }
+
+    [[nodiscard]] constexpr reference back() noexcept { return data_[size_ - 1]; }
+
+    [[nodiscard]] constexpr const_reference back() const noexcept { return data_[size_ - 1]; }
+
+    [[nodiscard]] constexpr pointer data() noexcept { return data_.data(); }
+
+    [[nodiscard]] constexpr const_pointer data() const noexcept { return data_.data(); }
+
+    constexpr void clear() noexcept { size_ = 0; }
+
+    constexpr bool push_back(const T& value) noexcept
+    {
+        if (size_ < capacity())
+        {
+            data_[size_++] = value;
+            return true;
+        }
+        return false;
+    }
+
+    constexpr bool push_back(T&& value) noexcept
+    {
+        if (size_ < capacity())
+        {
+            data_[size_++] = std::move(value);
+            return true;
+        }
+        return false;
+    }
+
+    constexpr void pop_back() noexcept
+    {
+        if (size_ > 0)
+        {
+            --size_;
+        }
+    }
+
+    [[nodiscard]] constexpr iterator begin() noexcept { return data(); }
+
+    [[nodiscard]] constexpr const_iterator begin() const noexcept { return data(); }
+
+    [[nodiscard]] constexpr iterator end() noexcept { return data() + size_; }
+
+    [[nodiscard]] constexpr const_iterator end() const noexcept { return data() + size_; }
+
+    [[nodiscard]] constexpr std::span<const T> view() const noexcept
+    {
+        return std::span<const T>(data(), size_);
+    }
+
+    [[nodiscard]] constexpr std::span<T> view() noexcept { return std::span<T>(data(), size_); }
 };
 
 } // namespace detail
