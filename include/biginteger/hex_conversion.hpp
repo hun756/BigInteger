@@ -3,6 +3,7 @@
 
 #include <array>
 #include <cstdint>
+#include <limits>
 #include <span>
 #include <type_traits>
 
@@ -168,6 +169,42 @@ public:
 
     [[nodiscard]] constexpr std::span<T> view() noexcept { return std::span<T>(data(), size_); }
 };
+
+template <typename T>
+constexpr auto to_underlying(T value) noexcept
+{
+    return static_cast<std::underlying_type_t<T>>(value);
+}
+
+template <typename T>
+[[nodiscard]] constexpr T rotl(T x, int s) noexcept
+{
+    static_assert(std::is_unsigned_v<T>, "rotl requires unsigned type");
+    constexpr auto bits = std::numeric_limits<T>::digits;
+    const auto r = s % bits;
+
+    if (r == 0)
+    {
+        return x;
+    }
+
+    return (x << r) | (x >> (bits - r));
+}
+
+template <typename T>
+[[nodiscard]] constexpr T rotr(T x, int s) noexcept
+{
+    static_assert(std::is_unsigned_v<T>, "rotr requires unsigned type");
+    constexpr auto bits = std::numeric_limits<T>::digits;
+    const auto r = s % bits;
+
+    if (r == 0)
+    {
+        return x;
+    }
+
+    return (x >> r) | (x << (bits - r));
+}
 
 } // namespace detail
 } // namespace hex
