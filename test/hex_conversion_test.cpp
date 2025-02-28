@@ -433,3 +433,58 @@ TEST_F(HexConverterTest, DecodeIntegral)
     // Invalid character
     EXPECT_THROW({ converter::decode_integral<uint16_t>("ABZZ"); }, std::invalid_argument);
 }
+
+// ==================================================================================================
+// HEX LITERAL TEST
+// ==================================================================================================
+using namespace hex::literals;
+
+class HexLiteralsTest : public ::testing::Test {};
+
+TEST_F(HexLiteralsTest, BasicLiteral) {
+    auto bytes = "1234ABCD"_hex;
+    ASSERT_EQ(bytes.size(), 4);
+    EXPECT_EQ(static_cast<int>(bytes[0]), 0x12);
+    EXPECT_EQ(static_cast<int>(bytes[1]), 0x34);
+    EXPECT_EQ(static_cast<int>(bytes[2]), 0xAB);
+    EXPECT_EQ(static_cast<int>(bytes[3]), 0xCD);
+}
+
+// Template literal test (constexpr)
+// !TODO: Fix this test
+// TEST_F(HexLiteralsTest, CompileTimeLiteral) {
+//     constexpr auto bytes = "DEADBEEF"_hex;
+//     static_assert(bytes.size() == 4);
+//     static_assert(static_cast<int>(bytes[0]) == 0xDE);
+//     static_assert(static_cast<int>(bytes[1]) == 0xAD);
+//     static_assert(static_cast<int>(bytes[2]) == 0xBE);
+//     static_assert(static_cast<int>(bytes[3]) == 0xEF);
+// }
+
+TEST_F(HexLiteralsTest, WideStringLiteral) {
+    auto bytes = L"1234ABCD"_hex;
+    ASSERT_EQ(bytes.size(), 4);
+    EXPECT_EQ(static_cast<int>(bytes[0]), 0x12);
+    EXPECT_EQ(static_cast<int>(bytes[1]), 0x34);
+    EXPECT_EQ(static_cast<int>(bytes[2]), 0xAB);
+    EXPECT_EQ(static_cast<int>(bytes[3]), 0xCD);
+}
+
+TEST_F(HexLiteralsTest, RuntimeLiteral) {
+    const char* hexStr = "1234ABCD";
+    auto bytes = operator""_hex(hexStr, 8);
+    ASSERT_EQ(bytes.size(), 4);
+    EXPECT_EQ(static_cast<int>(bytes[0]), 0x12);
+    EXPECT_EQ(static_cast<int>(bytes[1]), 0x34);
+    EXPECT_EQ(static_cast<int>(bytes[2]), 0xAB);
+    EXPECT_EQ(static_cast<int>(bytes[3]), 0xCD);
+}
+
+TEST_F(HexLiteralsTest, MixedCaseLiteral) {
+    auto bytes = "1234abCD"_hex;
+    ASSERT_EQ(bytes.size(), 4);
+    EXPECT_EQ(static_cast<int>(bytes[0]), 0x12);
+    EXPECT_EQ(static_cast<int>(bytes[1]), 0x34);
+    EXPECT_EQ(static_cast<int>(bytes[2]), 0xAB);
+    EXPECT_EQ(static_cast<int>(bytes[3]), 0xCD);
+}

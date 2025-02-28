@@ -3,12 +3,14 @@
 
 #include <array>
 #include <bit>
+#include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <span>
 #include <stdexcept>
 #include <string_view>
 #include <type_traits>
+#include <vector>
 
 namespace hex
 {
@@ -380,6 +382,45 @@ using whex_converter = basic_hex_converter<wchar_t>;
 using u8hex_converter = basic_hex_converter<char8_t>;
 using u16hex_converter = basic_hex_converter<char16_t>;
 using u32hex_converter = basic_hex_converter<char32_t>;
+
+namespace literals
+{
+
+// Hex string literal (ex: "ABCDEF"_hex)
+template <detail::CharType CharT, CharT... Chars>
+[[nodiscard]] constexpr auto operator""_hex() noexcept
+{
+    constexpr CharT str[] = {Chars..., CharT('\0')};
+    constexpr auto sv = std::basic_string_view<CharT>(str, sizeof...(Chars));
+    return basic_hex_converter<CharT>::template decode<std::vector<std::byte>>(sv);
+}
+
+[[nodiscard]] inline std::vector<std::byte> operator""_hex(const char* str, size_t len)
+{
+    return hex_converter::decode<std::vector<std::byte>>(std::string_view(str, len));
+}
+
+[[nodiscard]] inline std::vector<std::byte> operator""_hex(const wchar_t* str, size_t len)
+{
+    return whex_converter::decode<std::vector<std::byte>>(std::wstring_view(str, len));
+}
+
+[[nodiscard]] inline std::vector<std::byte> operator""_hex(const char8_t* str, size_t len)
+{
+    return u8hex_converter::decode<std::vector<std::byte>>(std::u8string_view(str, len));
+}
+
+[[nodiscard]] inline std::vector<std::byte> operator""_hex(const char16_t* str, size_t len)
+{
+    return u16hex_converter::decode<std::vector<std::byte>>(std::u16string_view(str, len));
+}
+
+[[nodiscard]] inline std::vector<std::byte> operator""_hex(const char32_t* str, size_t len)
+{
+    return u32hex_converter::decode<std::vector<std::byte>>(std::u32string_view(str, len));
+}
+
+} // namespace literals
 
 } // namespace hex
 
