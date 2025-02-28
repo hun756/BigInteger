@@ -3,6 +3,7 @@ include(GoogleTest)
 
 set(TEST_SOURCES
     biginteger_test.cpp
+    hex_conversion_test.cpp
 )
 
 foreach(test_source ${TEST_SOURCES})
