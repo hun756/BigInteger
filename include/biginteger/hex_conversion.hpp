@@ -2,9 +2,12 @@
 #define BIGINTEGER_HEX_CONVERSION_HPP_zer7n0
 
 #include <array>
+#include <bit>
 #include <cstdint>
 #include <limits>
 #include <span>
+#include <stdexcept>
+#include <string_view>
 #include <type_traits>
 
 namespace hex
@@ -207,6 +210,149 @@ template <typename T>
 }
 
 } // namespace detail
+
+template <detail::CharType CharT = char>
+class basic_hex_converter
+{
+    using tables = detail::hex_tables;
+
+public:
+    using char_type = CharT;
+    using byte_type = std::byte;
+
+    template <typename T>
+    static constexpr bool is_hex_digit(T c) noexcept
+    {
+        if constexpr (detail::CharType<T>)
+        {
+            return tables::template is_valid_hex_digit<T>(c);
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    template <detail::IntegralType T>
+    [[nodiscard]] static constexpr detail::hex_buffer<CharT> encode(T value) noexcept
+    {
+        detail::hex_buffer<CharT> result;
+        constexpr size_t digits = sizeof(T) * 2;
+
+        if constexpr (std::endian::native == std::endian::little)
+        {
+            auto unsigned_value = static_cast<std::make_unsigned_t<T>>(value);
+            unsigned_value = detail::rotl(unsigned_value, digits * 4);
+
+            for (size_t i = 0; i < digits; ++i)
+            {
+                const auto nibble = (unsigned_value >> (i * 4)) & 0xF;
+                result.push_back(tables::template encode_table<CharT>[nibble]);
+            }
+        }
+        else
+        {
+            auto unsigned_value = static_cast<std::make_unsigned_t<T>>(value);
+
+            for (size_t i = 0; i < digits; ++i)
+            {
+                const auto shift = (digits - 1 - i) * 4;
+                const auto nibble = (unsigned_value >> shift) & 0xF;
+                result.push_back(tables::template encode_table<CharT>[nibble]);
+            }
+        }
+
+        return result;
+    }
+
+    template <typename InputIt>
+    [[nodiscard]] static constexpr detail::hex_buffer<CharT> encode(InputIt first,
+                                                                    InputIt last) noexcept
+    {
+        detail::hex_buffer<CharT> result;
+        using value_type = typename std::iterator_traits<InputIt>::value_type;
+        static_assert(detail::ByteType<value_type>, "Iterator value type must be a byte type");
+
+        while (first != last && result.size() < result.capacity() - 1)
+        {
+            const auto byte = static_cast<uint8_t>(*first++);
+            result.push_back(tables::template encode_table<CharT>[byte >> 4]);
+            result.push_back(tables::template encode_table<CharT>[byte & 0xF]);
+        }
+
+        return result;
+    }
+
+    template <typename Container>
+    [[nodiscard]] static constexpr auto decode(std::basic_string_view<CharT> hex)
+    {
+        using value_type = typename Container::value_type;
+        static_assert(detail::ByteType<value_type>, "Container value type must be a byte type");
+
+        if (hex.size() % 2 != 0)
+        {
+            throw std::invalid_argument("Invalid hex string length - must be even");
+        }
+
+        Container result;
+        result.reserve(hex.size() / 2);
+
+        for (size_t i = 0; i < hex.size(); i += 2)
+        {
+            const auto high = tables::template decode_table<CharT>[static_cast<uint8_t>(hex[i])];
+            const auto low = tables::template decode_table<CharT>[static_cast<uint8_t>(hex[i + 1])];
+
+            if (high == 0xFF || low == 0xFF)
+            {
+                throw std::invalid_argument("Invalid hex character");
+            }
+
+            result.push_back(static_cast<value_type>((high << 4) | low));
+        }
+
+        return result;
+    }
+
+    template <detail::IntegralType T>
+    [[nodiscard]] static constexpr T decode_integral(std::basic_string_view<CharT> hex)
+    {
+        if (hex.size() > sizeof(T) * 2)
+        {
+            throw std::overflow_error("Hex string too large for target type");
+        }
+
+        std::make_unsigned_t<T> result = 0;
+        const size_t shift = (sizeof(T) * 2 - hex.size()) * 4;
+
+        for (size_t i = 0; i < hex.size(); ++i)
+        {
+            const auto value = tables::template decode_table<CharT>[static_cast<uint8_t>(hex[i])];
+            if (value == 0xFF)
+            {
+                throw std::invalid_argument("Invalid hex character");
+            }
+            result = (result << 4) | value;
+        }
+
+        if constexpr (std::endian::native == std::endian::little)
+        {
+            result = detail::rotr(result, shift);
+        }
+        else
+        {
+            result <<= shift;
+        }
+
+        return static_cast<T>(result);
+    }
+};
+
+using hex_converter = basic_hex_converter<char>;
+using whex_converter = basic_hex_converter<wchar_t>;
+using u8hex_converter = basic_hex_converter<char8_t>;
+using u16hex_converter = basic_hex_converter<char16_t>;
+using u32hex_converter = basic_hex_converter<char32_t>;
+
 } // namespace hex
 
 #endif // BIGINTEGER_HEX_CONVERSION_HPP_zer7n0

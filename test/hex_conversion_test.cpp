@@ -259,3 +259,177 @@ TEST_F(HexBufferTest, ConstView)
     std::string result(view.begin(), view.end());
     EXPECT_EQ(result, test);
 }
+
+// ==================================================================================================
+// HEX CONVERTER TEST
+// ==================================================================================================
+
+class HexConverterTest : public ::testing::Test
+{
+protected:
+    using converter = hex::hex_converter;
+};
+
+TEST_F(HexConverterTest, IsHexDigit)
+{
+    for (char c = '0'; c <= '9'; ++c)
+    {
+        EXPECT_TRUE(converter::is_hex_digit(c));
+    }
+    for (char c = 'A'; c <= 'F'; ++c)
+    {
+        EXPECT_TRUE(converter::is_hex_digit(c));
+    }
+    for (char c = 'a'; c <= 'f'; ++c)
+    {
+        EXPECT_TRUE(converter::is_hex_digit(c));
+    }
+
+    // invalid chars
+    EXPECT_FALSE(converter::is_hex_digit('G'));
+    EXPECT_FALSE(converter::is_hex_digit('g'));
+    EXPECT_FALSE(converter::is_hex_digit('x'));
+    EXPECT_FALSE(converter::is_hex_digit(' '));
+    EXPECT_FALSE(converter::is_hex_digit('-'));
+}
+
+TEST_F(HexConverterTest, EncodeIntegral)
+{
+    // uint8_t test
+    {
+        auto buffer = converter::encode(uint8_t{0xAB});
+        std::string result(buffer.begin(), buffer.end());
+        EXPECT_EQ(result, "AB");
+    }
+
+    // uint16_t test
+    {
+        auto buffer = converter::encode(uint16_t{0xABCD});
+        std::string result(buffer.begin(), buffer.end());
+        EXPECT_EQ(result, "ABCD");
+    }
+
+    // uint32_t test
+    {
+        auto buffer = converter::encode(uint32_t{0x12345678});
+        std::string result(buffer.begin(), buffer.end());
+        EXPECT_EQ(result, "12345678");
+    }
+
+    // int test - negative
+    {
+        auto buffer = converter::encode(int{-1});
+        std::string result(buffer.begin(), buffer.end());
+
+        // -1 bits as 1
+        if constexpr (sizeof(int) == 4)
+        {
+            EXPECT_EQ(result, "FFFFFFFF");
+        }
+        else if constexpr (sizeof(int) == 8)
+        {
+            EXPECT_EQ(result, "FFFFFFFFFFFFFFFF");
+        }
+    }
+}
+
+// Iterator range and encode test
+TEST_F(HexConverterTest, EncodeIterator)
+{
+    // Byte array
+    std::vector<std::byte> data;
+    data.push_back(static_cast<std::byte>(0x12));
+    data.push_back(static_cast<std::byte>(0x34));
+    data.push_back(static_cast<std::byte>(0xAB));
+    data.push_back(static_cast<std::byte>(0xCD));
+
+    auto buffer = converter::encode(data.begin(), data.end());
+    std::string result(buffer.begin(), buffer.end());
+    EXPECT_EQ(result, "1234ABCD");
+
+    // String
+    std::string text = "Hello";
+    auto str_buffer =
+        converter::encode(reinterpret_cast<const std::byte*>(text.data()),
+                          reinterpret_cast<const std::byte*>(text.data() + text.size()));
+    std::string str_result(str_buffer.begin(), str_buffer.end());
+    EXPECT_EQ(str_result, "48656C6C6F"); // 'H' = 0x48, 'e' = 0x65, ...
+}
+
+TEST_F(HexConverterTest, Decode)
+{
+    // Standart decode
+    {
+        auto result = converter::decode<std::vector<std::byte>>("1234ABCD");
+        ASSERT_EQ(result.size(), 4);
+        EXPECT_EQ(static_cast<int>(result[0]), 0x12);
+        EXPECT_EQ(static_cast<int>(result[1]), 0x34);
+        EXPECT_EQ(static_cast<int>(result[2]), 0xAB);
+        EXPECT_EQ(static_cast<int>(result[3]), 0xCD);
+    }
+
+    // Decode in lower case
+    {
+        auto result = converter::decode<std::vector<std::byte>>("1234abcd");
+        ASSERT_EQ(result.size(), 4);
+        EXPECT_EQ(static_cast<int>(result[0]), 0x12);
+        EXPECT_EQ(static_cast<int>(result[1]), 0x34);
+        EXPECT_EQ(static_cast<int>(result[2]), 0xAB);
+        EXPECT_EQ(static_cast<int>(result[3]), 0xCD);
+    }
+
+    // Mixed case decode
+    {
+        auto result = converter::decode<std::vector<std::byte>>("1234AbCd");
+        ASSERT_EQ(result.size(), 4);
+        EXPECT_EQ(static_cast<int>(result[0]), 0x12);
+        EXPECT_EQ(static_cast<int>(result[1]), 0x34);
+        EXPECT_EQ(static_cast<int>(result[2]), 0xAB);
+        EXPECT_EQ(static_cast<int>(result[3]), 0xCD);
+    }
+
+    // Invalid length
+    EXPECT_THROW({ converter::decode<std::vector<std::byte>>("123"); }, std::invalid_argument);
+
+    // Invalid character
+    EXPECT_THROW({ converter::decode<std::vector<std::byte>>("12XY"); }, std::invalid_argument);
+}
+
+TEST_F(HexConverterTest, DecodeIntegral)
+{
+    // uint8_t test
+    {
+        auto result = converter::decode_integral<uint8_t>("FF");
+        EXPECT_EQ(result, 0xFF);
+    }
+
+    // uint16_t test
+    {
+        auto result = converter::decode_integral<uint16_t>("ABCD");
+        EXPECT_EQ(result, 0xABCD);
+    }
+
+    // uint32_t test
+    {
+        auto result = converter::decode_integral<uint32_t>("12345678");
+        EXPECT_EQ(result, 0x12345678);
+    }
+
+    // int test
+    {
+        auto result = converter::decode_integral<int>("FFFFFFFF");
+        EXPECT_EQ(result, -1);
+    }
+
+    // Leading zeros
+    {
+        auto result = converter::decode_integral<uint16_t>("00AB");
+        EXPECT_EQ(result, 0x00AB);
+    }
+
+    // Overflow
+    EXPECT_THROW({ converter::decode_integral<uint8_t>("ABCD"); }, std::overflow_error);
+
+    // Invalid character
+    EXPECT_THROW({ converter::decode_integral<uint16_t>("ABZZ"); }, std::invalid_argument);
+}
