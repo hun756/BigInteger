@@ -450,16 +450,14 @@ TEST_F(HexLiteralsTest, BasicLiteral) {
     EXPECT_EQ(static_cast<int>(bytes[3]), 0xCD);
 }
 
-// Template literal test (constexpr)
-// !TODO: Fix this test
-// TEST_F(HexLiteralsTest, CompileTimeLiteral) {
-//     constexpr auto bytes = "DEADBEEF"_hex;
-//     static_assert(bytes.size() == 4);
-//     static_assert(static_cast<int>(bytes[0]) == 0xDE);
-//     static_assert(static_cast<int>(bytes[1]) == 0xAD);
-//     static_assert(static_cast<int>(bytes[2]) == 0xBE);
-//     static_assert(static_cast<int>(bytes[3]) == 0xEF);
-// }
+TEST_F(HexLiteralsTest, CompileTimeLiteral) {
+    auto bytes = "DEADBEEF"_hex;
+    EXPECT_EQ(bytes.size(), 4);
+    EXPECT_EQ(static_cast<int>(bytes[0]), 0xDE);
+    EXPECT_EQ(static_cast<int>(bytes[1]), 0xAD);
+    EXPECT_EQ(static_cast<int>(bytes[2]), 0xBE);
+    EXPECT_EQ(static_cast<int>(bytes[3]), 0xEF);
+}
 
 TEST_F(HexLiteralsTest, WideStringLiteral) {
     auto bytes = L"1234ABCD"_hex;
