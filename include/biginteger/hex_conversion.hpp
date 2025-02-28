@@ -237,28 +237,24 @@ public:
     [[nodiscard]] static constexpr detail::hex_buffer<CharT> encode(T value) noexcept
     {
         detail::hex_buffer<CharT> result;
-        constexpr size_t digits = sizeof(T) * 2;
+        auto unsigned_value = static_cast<std::make_unsigned_t<T>>(value);
 
         if constexpr (std::endian::native == std::endian::little)
         {
-            auto unsigned_value = static_cast<std::make_unsigned_t<T>>(value);
-            unsigned_value = detail::rotl(unsigned_value, digits * 4);
-
-            for (size_t i = 0; i < digits; ++i)
+            for (int i = sizeof(T) - 1; i >= 0; --i)
             {
-                const auto nibble = (unsigned_value >> (i * 4)) & 0xF;
-                result.push_back(tables::template encode_table<CharT>[nibble]);
+                uint8_t byte = (unsigned_value >> (i * 8)) & 0xFF;
+                result.push_back(tables::template encode_table<CharT>[byte >> 4]);
+                result.push_back(tables::template encode_table<CharT>[byte & 0xF]);
             }
         }
         else
         {
-            auto unsigned_value = static_cast<std::make_unsigned_t<T>>(value);
-
-            for (size_t i = 0; i < digits; ++i)
+            for (size_t i = 0; i < sizeof(T); ++i)
             {
-                const auto shift = (digits - 1 - i) * 4;
-                const auto nibble = (unsigned_value >> shift) & 0xF;
-                result.push_back(tables::template encode_table<CharT>[nibble]);
+                uint8_t byte = (unsigned_value >> ((sizeof(T) - 1 - i) * 8)) & 0xFF;
+                result.push_back(tables::template encode_table<CharT>[byte >> 4]);
+                result.push_back(tables::template encode_table<CharT>[byte & 0xF]);
             }
         }
 
@@ -321,26 +317,58 @@ public:
             throw std::overflow_error("Hex string too large for target type");
         }
 
-        std::make_unsigned_t<T> result = 0;
-        const size_t shift = (sizeof(T) * 2 - hex.size()) * 4;
+        std::basic_string_view<CharT> normalized_hex = hex;
+        const size_t leading_zeros = (sizeof(T) * 2 - hex.size());
 
-        for (size_t i = 0; i < hex.size(); ++i)
-        {
-            const auto value = tables::template decode_table<CharT>[static_cast<uint8_t>(hex[i])];
-            if (value == 0xFF)
-            {
-                throw std::invalid_argument("Invalid hex character");
-            }
-            result = (result << 4) | value;
-        }
+        std::make_unsigned_t<T> result = 0;
 
         if constexpr (std::endian::native == std::endian::little)
         {
-            result = detail::rotr(result, shift);
+            for (size_t i = 0; i < normalized_hex.size(); i += 2)
+            {
+                if (i + 1 >= normalized_hex.size())
+                    break;
+
+                const auto high =
+                    tables::template decode_table<CharT>[static_cast<uint8_t>(normalized_hex[i])];
+                const auto low = tables::template decode_table<CharT>[static_cast<uint8_t>(
+                    normalized_hex[i + 1])];
+
+                if (high == 0xFF || low == 0xFF)
+                {
+                    throw std::invalid_argument("Invalid hex character");
+                }
+
+                const uint8_t byte = (high << 4) | low;
+                const size_t shift = ((normalized_hex.size() - i - 2) / 2) * 8;
+                result |= static_cast<std::make_unsigned_t<T>>(byte) << shift;
+            }
         }
         else
         {
-            result <<= shift;
+            for (size_t i = 0; i < normalized_hex.size(); i += 2)
+            {
+                if (i + 1 >= normalized_hex.size())
+                    break;
+
+                const auto high =
+                    tables::template decode_table<CharT>[static_cast<uint8_t>(normalized_hex[i])];
+                const auto low = tables::template decode_table<CharT>[static_cast<uint8_t>(
+                    normalized_hex[i + 1])];
+
+                if (high == 0xFF || low == 0xFF)
+                {
+                    throw std::invalid_argument("Invalid hex character");
+                }
+
+                const uint8_t byte = (high << 4) | low;
+                result = (result << 8) | byte;
+            }
+        }
+
+        if constexpr (std::endian::native == std::endian::big)
+        {
+            result <<= (leading_zeros * 4);
         }
 
         return static_cast<T>(result);
