@@ -54,7 +54,7 @@ public:
         {
             result += "0x";
 
-            auto high_element = digits[digits.size() - 1];
+            auto high_element = digits[0];
             auto buffer = hex::hex_converter::encode(high_element);
             std::string hex_str(buffer.begin(), buffer.end());
 
@@ -63,7 +63,7 @@ public:
 
             result += hex_str;
 
-            for (int i = digits.size() - 2; i >= 0; --i)
+            for (size_t i = 1; i < digits.size(); ++i)
             {
                 buffer = hex::hex_converter::encode(digits[i]);
                 hex_str = std::string(buffer.begin(), buffer.end());
@@ -194,6 +194,7 @@ public:
                 std::swap(result[0], result[1]);
             }
 
+            std::reverse(result.begin(), result.end());
             return result;
         }
 

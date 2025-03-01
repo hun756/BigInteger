@@ -99,7 +99,7 @@ TEST_F(StringConversionTest, ToStringBaseHexadecimal)
 
     // Sınır durumları
     std::vector<uint32_t> digits7 = {0, 0, 1};
-    EXPECT_EQ(StringConversion::to_string_base(digits7, false, 16), "0x000000000000000001");
+    EXPECT_EQ(StringConversion::to_string_base(digits7, false, 16), "0x00000000000000001");
 }
 
 TEST_F(StringConversionTest, ToStringBaseBinary)
