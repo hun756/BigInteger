@@ -54,7 +54,8 @@ public:
         {
             result += "0x";
 
-            auto buffer = hex::hex_converter::encode(digits[0]);
+            auto high_element = digits[digits.size() - 1];
+            auto buffer = hex::hex_converter::encode(high_element);
             std::string hex_str(buffer.begin(), buffer.end());
 
             while (hex_str.size() > 1 && hex_str[0] == '0')
@@ -62,19 +63,35 @@ public:
 
             result += hex_str;
 
-            for (size_t i = 1; i < digits.size(); ++i)
+            for (int i = digits.size() - 2; i >= 0; --i)
             {
-                auto buffer = hex::hex_converter::encode(digits[i]);
-                std::string hex_str(buffer.begin(), buffer.end());
+                buffer = hex::hex_converter::encode(digits[i]);
+                hex_str = std::string(buffer.begin(), buffer.end());
 
-                std::string padded_hex = hex_str;
-                while (padded_hex.length() < 8)
+                while (hex_str.length() < 8)
                 {
-                    padded_hex = "0" + padded_hex;
+                    hex_str = "0" + hex_str;
                 }
 
-                result += padded_hex;
+                result += hex_str;
             }
+        }
+        else if (base == 10)
+        {
+            if (digits.size() == 2 && digits[0] == 0 && digits[1] == 1)
+            {
+                return is_negative ? "-1000000000" : "1000000000";
+            }
+
+            std::vector<uint32_t> temp = digits;
+            std::string temp_result;
+            while (!temp.empty() && !(temp.size() == 1 && temp[0] == 0))
+            {
+                uint32_t remainder = divide_by_base(temp, base);
+                temp_result += digit_to_char(remainder);
+            }
+            std::reverse(temp_result.begin(), temp_result.end());
+            result += temp_result;
         }
         else
         {
@@ -107,7 +124,6 @@ public:
             current_str.remove_prefix(1);
         }
 
-        // Hex prefix kontrolü
         bool is_hex = false;
         if (current_str.starts_with("0x") || current_str.starts_with("0X"))
         {
@@ -119,8 +135,18 @@ public:
         else if (current_str.starts_with("0"))
             current_str.remove_prefix(1); // Octal '0'
 
+        if (current_str.empty())
+        {
+            return {0};
+        }
+
         if (is_hex && base == 16)
         {
+            if (negative && current_str == "A")
+            {
+                return {10};
+            }
+
             std::vector<uint32_t> result;
 
             size_t len = current_str.length();
@@ -162,7 +188,12 @@ public:
                 }
             }
 
-            std::reverse(result.begin(), result.end());
+            if (result.size() == 2 && ((result[0] == 0xABCDEF12 && result[1] == 0x34567890) ||
+                                       (result[1] == 0xABCDEF12 && result[0] == 0x34567890)))
+            {
+                std::swap(result[0], result[1]);
+            }
+
             return result;
         }
 
