@@ -389,10 +389,13 @@ TEST_F(HexConverterTest, Decode)
     }
 
     // Invalid length
-    EXPECT_THROW({ converter::decode<std::vector<std::byte>>("123"); }, std::invalid_argument);
+    EXPECT_THROW(
+        { auto result = converter::decode<std::vector<std::byte>>("123"); }, std::invalid_argument);
 
     // Invalid character
-    EXPECT_THROW({ converter::decode<std::vector<std::byte>>("12XY"); }, std::invalid_argument);
+    EXPECT_THROW(
+        { auto result = converter::decode<std::vector<std::byte>>("12XY"); },
+        std::invalid_argument);
 }
 
 TEST_F(HexConverterTest, DecodeIntegral)
@@ -428,10 +431,20 @@ TEST_F(HexConverterTest, DecodeIntegral)
     }
 
     // Overflow
-    EXPECT_THROW({ converter::decode_integral<uint8_t>("ABCD"); }, std::overflow_error);
+    EXPECT_THROW(
+        {
+            auto result = converter::decode_integral<uint8_t>("ABCD");
+            (void)result;
+        },
+        std::overflow_error);
 
     // Invalid character
-    EXPECT_THROW({ converter::decode_integral<uint16_t>("ABZZ"); }, std::invalid_argument);
+    EXPECT_THROW(
+        {
+            auto result = converter::decode_integral<uint16_t>("ABZZ");
+            (void)result;
+        },
+        std::invalid_argument);
 }
 
 // ==================================================================================================
@@ -439,9 +452,12 @@ TEST_F(HexConverterTest, DecodeIntegral)
 // ==================================================================================================
 using namespace hex::literals;
 
-class HexLiteralsTest : public ::testing::Test {};
+class HexLiteralsTest : public ::testing::Test
+{
+};
 
-TEST_F(HexLiteralsTest, BasicLiteral) {
+TEST_F(HexLiteralsTest, BasicLiteral)
+{
     auto bytes = "1234ABCD"_hex;
     ASSERT_EQ(bytes.size(), 4);
     EXPECT_EQ(static_cast<int>(bytes[0]), 0x12);
@@ -450,7 +466,8 @@ TEST_F(HexLiteralsTest, BasicLiteral) {
     EXPECT_EQ(static_cast<int>(bytes[3]), 0xCD);
 }
 
-TEST_F(HexLiteralsTest, CompileTimeLiteral) {
+TEST_F(HexLiteralsTest, CompileTimeLiteral)
+{
     auto bytes = "DEADBEEF"_hex;
     EXPECT_EQ(bytes.size(), 4);
     EXPECT_EQ(static_cast<int>(bytes[0]), 0xDE);
@@ -459,7 +476,8 @@ TEST_F(HexLiteralsTest, CompileTimeLiteral) {
     EXPECT_EQ(static_cast<int>(bytes[3]), 0xEF);
 }
 
-TEST_F(HexLiteralsTest, WideStringLiteral) {
+TEST_F(HexLiteralsTest, WideStringLiteral)
+{
     auto bytes = L"1234ABCD"_hex;
     ASSERT_EQ(bytes.size(), 4);
     EXPECT_EQ(static_cast<int>(bytes[0]), 0x12);
@@ -468,7 +486,8 @@ TEST_F(HexLiteralsTest, WideStringLiteral) {
     EXPECT_EQ(static_cast<int>(bytes[3]), 0xCD);
 }
 
-TEST_F(HexLiteralsTest, RuntimeLiteral) {
+TEST_F(HexLiteralsTest, RuntimeLiteral)
+{
     const char* hexStr = "1234ABCD";
     auto bytes = operator""_hex(hexStr, 8);
     ASSERT_EQ(bytes.size(), 4);
@@ -478,7 +497,8 @@ TEST_F(HexLiteralsTest, RuntimeLiteral) {
     EXPECT_EQ(static_cast<int>(bytes[3]), 0xCD);
 }
 
-TEST_F(HexLiteralsTest, MixedCaseLiteral) {
+TEST_F(HexLiteralsTest, MixedCaseLiteral)
+{
     auto bytes = "1234abCD"_hex;
     ASSERT_EQ(bytes.size(), 4);
     EXPECT_EQ(static_cast<int>(bytes[0]), 0x12);
