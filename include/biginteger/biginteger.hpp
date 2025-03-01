@@ -1,6 +1,8 @@
 #ifndef BIGINTEGER_HPP_goec3csb
 #define BIGINTEGER_HPP_goec3csb
 
+#include <algorithm>
+#include <biginteger/hex_conversion.hpp>
 #include <concepts>
 #include <cstdint>
 #include <stdexcept>
@@ -30,8 +32,8 @@ struct NumericConstants
 class StringConversion
 {
 public:
-    static std::string to_string_base(const std::vector<uint32_t>& digits,
-                                      bool is_negative, int base)
+    static std::string to_string_base(const std::vector<uint32_t>& digits, bool is_negative,
+                                      int base)
     {
         if (digits.empty() || (digits.size() == 1 && digits[0] == 0))
         {
@@ -51,18 +53,33 @@ public:
         if (base == 16)
         {
             result += "0x";
-            for (size_t i = 0; i < digits.size(); ++i)
+
+            auto buffer = hex::hex_converter::encode(digits[0]);
+            std::string hex_str(buffer.begin(), buffer.end());
+
+            std::transform(hex_str.begin(), hex_str.end(), hex_str.begin(),
+                           [](unsigned char c) { return std::tolower(c); });
+
+            while (hex_str.size() > 1 && hex_str[0] == '0')
+                hex_str.erase(0, 1);
+
+            result += hex_str;
+
+            for (size_t i = 1; i < digits.size(); ++i)
             {
-                if (i == 0)
+                auto buffer = hex::hex_converter::encode(digits[i]);
+                std::string hex_str(buffer.begin(), buffer.end());
+
+                std::transform(hex_str.begin(), hex_str.end(), hex_str.begin(),
+                               [](unsigned char c) { return std::tolower(c); });
+
+                std::string padded_hex = hex_str;
+                while (padded_hex.length() < 8)
                 {
-                    std::string hex = to_hex(digits[i]);
-                    result += hex;
+                    padded_hex = "0" + padded_hex;
                 }
-                else
-                {
-                    std::string hex = to_hex(digits[i]);
-                    result += std::string(8 - hex.length(), '0') + hex;
-                }
+
+                result += padded_hex;
             }
         }
         else
@@ -86,8 +103,7 @@ public:
         return result;
     }
 
-    static std::vector<uint32_t> from_string_base(const std::string_view str,
-                                                  int base)
+    static std::vector<uint32_t> from_string_base(const std::string_view str, int base)
     {
         std::string_view current_str = str;
         bool negative = false;
@@ -141,20 +157,6 @@ private:
             digits.erase(digits.begin());
 
         return static_cast<uint32_t>(remainder);
-    }
-
-    static std::string to_hex(uint32_t value)
-    {
-        if (value == 0)
-            return "0";
-        std::string hex;
-        while (value > 0)
-        {
-            uint32_t digit = value % 16;
-            hex = digit_to_char(digit) + hex;
-            value /= 16;
-        }
-        return hex;
     }
 
     static void multiply_by_base(std::vector<uint32_t>& digits, uint32_t base)
