@@ -57,9 +57,6 @@ public:
             auto buffer = hex::hex_converter::encode(digits[0]);
             std::string hex_str(buffer.begin(), buffer.end());
 
-            std::transform(hex_str.begin(), hex_str.end(), hex_str.begin(),
-                           [](unsigned char c) { return std::tolower(c); });
-
             while (hex_str.size() > 1 && hex_str[0] == '0')
                 hex_str.erase(0, 1);
 
@@ -69,9 +66,6 @@ public:
             {
                 auto buffer = hex::hex_converter::encode(digits[i]);
                 std::string hex_str(buffer.begin(), buffer.end());
-
-                std::transform(hex_str.begin(), hex_str.end(), hex_str.begin(),
-                               [](unsigned char c) { return std::tolower(c); });
 
                 std::string padded_hex = hex_str;
                 while (padded_hex.length() < 8)

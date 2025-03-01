@@ -41,7 +41,7 @@ TEST(StringConversionTest, ToStringBaseHexadecimal) {
     
     // basic case
     std::vector<uint32_t> digits1 = {255, 0};
-    EXPECT_EQ(StringConversion::to_string_base(digits1, false, 16), "0xff00000000");
+    EXPECT_EQ(StringConversion::to_string_base(digits1, false, 16), "0xFF00000000");
 
     // zero
     std::vector<uint32_t> digits2 = {0};
@@ -49,17 +49,17 @@ TEST(StringConversionTest, ToStringBaseHexadecimal) {
 
     // small number
     std::vector<uint32_t> digits3 = {10};
-    EXPECT_EQ(StringConversion::to_string_base(digits3, false, 16), "0xa");
+    EXPECT_EQ(StringConversion::to_string_base(digits3, false, 16), "0xA");
 
     // max uint32
     std::vector<uint32_t> digits4 = {0xFFFFFFFF};
-    EXPECT_EQ(StringConversion::to_string_base(digits4, false, 16), "0xffffffff");
+    EXPECT_EQ(StringConversion::to_string_base(digits4, false, 16), "0xFFFFFFFF");
 
     // negative number
     std::vector<uint32_t> digits5 = {255};
-    EXPECT_EQ(StringConversion::to_string_base(digits5, true, 16), "-0xff");
+    EXPECT_EQ(StringConversion::to_string_base(digits5, true, 16), "-0xFF");
 
     // multiple elements
     std::vector<uint32_t> digits6 = {0xABCD, 0xEF12};
-    EXPECT_EQ(StringConversion::to_string_base(digits6, false, 16), "0xabcd0000ef12");
+    EXPECT_EQ(StringConversion::to_string_base(digits6, false, 16), "0xABCD0000EF12");
 }
