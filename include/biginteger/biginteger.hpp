@@ -107,15 +107,64 @@ public:
             current_str.remove_prefix(1);
         }
 
+        // Hex prefix kontrolü
+        bool is_hex = false;
         if (current_str.starts_with("0x") || current_str.starts_with("0X"))
+        {
+            is_hex = true;
             current_str.remove_prefix(2);
+        }
         else if (current_str.starts_with("0b") || current_str.starts_with("0B"))
             current_str.remove_prefix(2);
         else if (current_str.starts_with("0"))
             current_str.remove_prefix(1); // Octal '0'
 
-        std::vector<uint32_t> result;
-        result.reserve(current_str.length() / 9 + 1);
+        if (is_hex && base == 16)
+        {
+            std::vector<uint32_t> result;
+
+            size_t len = current_str.length();
+            size_t start = 0;
+
+            if (len % 8 != 0)
+            {
+                size_t first_chunk_size = len % 8;
+                std::string_view first_chunk = current_str.substr(0, first_chunk_size);
+
+                try
+                {
+                    uint32_t value =
+                        hex::hex_converter::decode_integral<uint32_t>(std::string(first_chunk));
+                    result.push_back(value);
+                }
+                catch (const std::exception& e)
+                {
+                    throw std::invalid_argument("Invalid hex string: " + std::string(e.what()));
+                }
+
+                start = first_chunk_size;
+            }
+
+            for (size_t i = start; i < len; i += 8)
+            {
+                size_t chunk_size = (len - i < 8) ? (len - i) : 8;
+                std::string_view chunk = current_str.substr(i, chunk_size);
+
+                try
+                {
+                    uint32_t value =
+                        hex::hex_converter::decode_integral<uint32_t>(std::string(chunk));
+                    result.push_back(value);
+                }
+                catch (const std::exception& e)
+                {
+                    throw std::invalid_argument("Invalid hex string: " + std::string(e.what()));
+                }
+            }
+
+            std::reverse(result.begin(), result.end());
+            return result;
+        }
 
         std::vector<uint32_t> current_big_digit;
         current_big_digit.push_back(0);
