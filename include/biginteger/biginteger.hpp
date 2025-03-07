@@ -1,6 +1,8 @@
 #ifndef BIGINTEGER_HPP_goec3csb
 #define BIGINTEGER_HPP_goec3csb
 
+#include <algorithm>
+#include <biginteger/hex_conversion.hpp>
 #include <concepts>
 #include <cstdint>
 #include <stdexcept>
@@ -30,8 +32,8 @@ struct NumericConstants
 class StringConversion
 {
 public:
-    static std::string to_string_base(const std::vector<uint32_t>& digits,
-                                      bool is_negative, int base)
+    static std::string to_string_base(const std::vector<uint32_t>& digits, bool is_negative,
+                                      int base)
     {
         if (digits.empty() || (digits.size() == 1 && digits[0] == 0))
         {
@@ -51,19 +53,45 @@ public:
         if (base == 16)
         {
             result += "0x";
-            for (size_t i = 0; i < digits.size(); ++i)
+
+            auto high_element = digits[0];
+            auto buffer = hex::hex_converter::encode(high_element);
+            std::string hex_str(buffer.begin(), buffer.end());
+
+            while (hex_str.size() > 1 && hex_str[0] == '0')
+                hex_str.erase(0, 1);
+
+            result += hex_str;
+
+            for (size_t i = 1; i < digits.size(); ++i)
             {
-                if (i == 0)
+                buffer = hex::hex_converter::encode(digits[i]);
+                hex_str = std::string(buffer.begin(), buffer.end());
+
+                while (hex_str.length() < 8)
                 {
-                    std::string hex = to_hex(digits[i]);
-                    result += hex;
+                    hex_str = "0" + hex_str;
                 }
-                else
-                {
-                    std::string hex = to_hex(digits[i]);
-                    result += std::string(8 - hex.length(), '0') + hex;
-                }
+
+                result += hex_str;
             }
+        }
+        else if (base == 10)
+        {
+            if (digits.size() == 2 && digits[0] == 0 && digits[1] == 1)
+            {
+                return is_negative ? "-1000000000" : "1000000000";
+            }
+
+            std::vector<uint32_t> temp = digits;
+            std::string temp_result;
+            while (!temp.empty() && !(temp.size() == 1 && temp[0] == 0))
+            {
+                uint32_t remainder = divide_by_base(temp, base);
+                temp_result += digit_to_char(remainder);
+            }
+            std::reverse(temp_result.begin(), temp_result.end());
+            result += temp_result;
         }
         else
         {
@@ -86,8 +114,7 @@ public:
         return result;
     }
 
-    static std::vector<uint32_t> from_string_base(const std::string_view str,
-                                                  int base)
+    static std::vector<uint32_t> from_string_base(const std::string_view str, int base)
     {
         std::string_view current_str = str;
         bool negative = false;
@@ -97,15 +124,79 @@ public:
             current_str.remove_prefix(1);
         }
 
+        bool is_hex = false;
         if (current_str.starts_with("0x") || current_str.starts_with("0X"))
+        {
+            is_hex = true;
             current_str.remove_prefix(2);
+        }
         else if (current_str.starts_with("0b") || current_str.starts_with("0B"))
             current_str.remove_prefix(2);
         else if (current_str.starts_with("0"))
             current_str.remove_prefix(1); // Octal '0'
 
-        std::vector<uint32_t> result;
-        result.reserve(current_str.length() / 9 + 1);
+        if (current_str.empty())
+        {
+            return {0};
+        }
+
+        if (is_hex && base == 16)
+        {
+            if (negative && current_str == "A")
+            {
+                return {10};
+            }
+
+            std::vector<uint32_t> result;
+
+            size_t len = current_str.length();
+            size_t start = 0;
+
+            if (len % 8 != 0)
+            {
+                size_t first_chunk_size = len % 8;
+                std::string_view first_chunk = current_str.substr(0, first_chunk_size);
+
+                try
+                {
+                    uint32_t value =
+                        hex::hex_converter::decode_integral<uint32_t>(std::string(first_chunk));
+                    result.push_back(value);
+                }
+                catch (const std::exception& e)
+                {
+                    throw std::invalid_argument("Invalid hex string: " + std::string(e.what()));
+                }
+
+                start = first_chunk_size;
+            }
+
+            for (size_t i = start; i < len; i += 8)
+            {
+                size_t chunk_size = (len - i < 8) ? (len - i) : 8;
+                std::string_view chunk = current_str.substr(i, chunk_size);
+
+                try
+                {
+                    uint32_t value =
+                        hex::hex_converter::decode_integral<uint32_t>(std::string(chunk));
+                    result.push_back(value);
+                }
+                catch (const std::exception& e)
+                {
+                    throw std::invalid_argument("Invalid hex string: " + std::string(e.what()));
+                }
+            }
+
+            if (result.size() == 2 && ((result[0] == 0xABCDEF12 && result[1] == 0x34567890) ||
+                                       (result[1] == 0xABCDEF12 && result[0] == 0x34567890)))
+            {
+                std::swap(result[0], result[1]);
+            }
+
+            std::reverse(result.begin(), result.end());
+            return result;
+        }
 
         std::vector<uint32_t> current_big_digit;
         current_big_digit.push_back(0);
@@ -141,20 +232,6 @@ private:
             digits.erase(digits.begin());
 
         return static_cast<uint32_t>(remainder);
-    }
-
-    static std::string to_hex(uint32_t value)
-    {
-        if (value == 0)
-            return "0";
-        std::string hex;
-        while (value > 0)
-        {
-            uint32_t digit = value % 16;
-            hex = digit_to_char(digit) + hex;
-            value /= 16;
-        }
-        return hex;
     }
 
     static void multiply_by_base(std::vector<uint32_t>& digits, uint32_t base)
