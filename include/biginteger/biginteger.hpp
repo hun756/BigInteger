@@ -29,6 +29,244 @@ struct NumericConstants
     static constexpr int MAX_POWER_OF_TEN = 999999999;
 };
 
+namespace dtoa
+{
+
+enum class CharCase
+{
+    Lower,
+    Upper,
+    Mixed
+};
+
+template <typename IntT, CharCase Case = CharCase::Lower>
+struct DigitChars
+{
+    static_assert(std::is_integral_v<IntT>, "IntT must be an integral type");
+    static constexpr auto get() noexcept
+    {
+        if constexpr (Case == CharCase::Lower)
+        {
+            return std::array{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b',
+                              'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
+                              'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
+        }
+        else if constexpr (Case == CharCase::Upper)
+        {
+            return std::array{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B',
+                              'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
+                              'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'};
+        }
+        else
+        {
+            static_assert(Case != CharCase::Mixed, "Mixed case not directly supported in lookup");
+            return std::array<char, 0>{};
+        }
+    }
+};
+
+template <typename T>
+struct MaxDigits
+{
+    static constexpr std::size_t value =
+        static_cast<std::size_t>(std::numeric_limits<T>::digits10 + 1);
+};
+
+template <typename CharT>
+constexpr bool is_digit(CharT c) noexcept
+{
+    return c >= CharT('0') && c <= CharT('9');
+}
+
+template <typename CharT>
+constexpr bool is_lower_alpha(CharT c) noexcept
+{
+    return c >= CharT('a') && c <= CharT('z');
+}
+
+template <typename CharT>
+constexpr bool is_upper_alpha(CharT c) noexcept
+{
+    return c >= CharT('A') && c <= CharT('Z');
+}
+
+template <typename CharT>
+constexpr bool is_alpha(CharT c) noexcept
+{
+    return is_lower_alpha(c) || is_upper_alpha(c);
+}
+
+template <typename CharT>
+constexpr bool is_alnum(CharT c) noexcept
+{
+    return is_digit(c) || is_alpha(c);
+}
+
+template <std::size_t Base = 10, typename IntT = std::uint32_t, CharCase Case = CharCase::Lower>
+constexpr auto digit_to_char(IntT digit)
+{
+    static_assert(Base >= 2 && Base <= 36, "Base must be between 2 and 36");
+
+    using char_type = char;
+    constexpr auto chars = DigitChars<IntT, Case>::get();
+
+    if (digit >= Base)
+    {
+        throw std::out_of_range("Digit exceeds base");
+    }
+
+    if constexpr (Case == CharCase::Mixed)
+    {
+        if (digit < 10)
+        {
+            return static_cast<char_type>('0' + digit);
+        }
+        else
+        {
+            return (digit % 2 == 0) ? static_cast<char_type>('A' + (digit - 10))
+                                    : static_cast<char_type>('a' + (digit - 10));
+        }
+    }
+    else
+    {
+        return chars[digit];
+    }
+}
+
+template <std::size_t Base = 10, typename CharT = char, typename IntT = std::uint32_t>
+constexpr auto char_to_digit(CharT c) -> IntT
+{
+    static_assert(Base >= 2 && Base <= 36, "Base must be between 2 and 36");
+    static_assert(std::is_integral_v<IntT>, "IntT must be an integral type");
+
+    if (is_digit(c))
+    {
+        const auto val = static_cast<IntT>(c - CharT('0'));
+        if (val >= Base)
+        {
+            throw std::out_of_range("Character out of range for specified base");
+        }
+        return val;
+    }
+    else if (is_lower_alpha(c))
+    {
+        const auto val = static_cast<IntT>(10 + (c - CharT('a')));
+        if (val >= Base)
+        {
+            throw std::out_of_range("Character out of range for specified base");
+        }
+        return val;
+    }
+    else if (is_upper_alpha(c))
+    {
+        const auto val = static_cast<IntT>(10 + (c - CharT('A')));
+        if (val >= Base)
+        {
+            throw std::out_of_range("Character out of range for specified base");
+        }
+        return val;
+    }
+
+    throw std::invalid_argument("Invalid character for conversion");
+}
+
+template <typename CharT = char>
+constexpr bool is_valid_digit(CharT c, std::size_t base = 10)
+{
+    if (base < 2 || base > 36)
+    {
+        throw std::out_of_range("Base must be between 2 and 36");
+    }
+
+    if (is_digit(c))
+    {
+        return (c - CharT('0')) < static_cast<int>(base);
+    }
+    else if (is_lower_alpha(c))
+    {
+        return (10 + (c - CharT('a'))) < static_cast<int>(base);
+    }
+    else if (is_upper_alpha(c))
+    {
+        return (10 + (c - CharT('A'))) < static_cast<int>(base);
+    }
+
+    return false;
+}
+
+template <std::size_t Base = 10, typename IntT = std::uint32_t, typename CharT = char,
+          CharCase Case = CharCase::Lower>
+class DigitConverter
+{
+    static_assert(Base >= 2 && Base <= 36, "Base must be between 2 and 36");
+    static_assert(std::is_integral_v<IntT>, "IntT must be an integral type");
+
+public:
+    using int_type = IntT;
+    using char_type = CharT;
+    static constexpr std::size_t base = Base;
+    static constexpr CharCase char_case = Case;
+
+    constexpr DigitConverter() noexcept = default;
+
+    constexpr char_type to_char(int_type digit) const
+    {
+        return digit_to_char<Base, IntT, Case>(digit);
+    }
+
+    constexpr int_type to_digit(char_type c) const { return char_to_digit<Base, CharT, IntT>(c); }
+
+    constexpr bool is_valid(char_type c) const noexcept { return is_valid_digit(c, Base); }
+
+    template <typename OutputIt>
+    constexpr OutputIt convert_to_chars(int_type value, OutputIt out) const
+    {
+        if (value == 0)
+        {
+            *out++ = to_char(0);
+            return out;
+        }
+
+        char_type buffer[std::numeric_limits<int_type>::digits + 1];
+        char_type* end = buffer + sizeof(buffer);
+        char_type* curr = end;
+
+        while (value > 0)
+        {
+            *--curr = to_char(value % Base);
+            value /= Base;
+        }
+
+        return std::copy(curr, end, out);
+    }
+
+    template <typename InputIt>
+    constexpr int_type convert_from_chars(InputIt first, InputIt last) const
+    {
+        int_type result = 0;
+        int_type place_value = 1;
+
+        auto it = last;
+        while (it != first)
+        {
+            --it;
+            const auto digit = to_digit(*it);
+
+            if (std::numeric_limits<int_type>::max() / Base < result)
+            {
+                throw std::overflow_error("Integer overflow during conversion");
+            }
+
+            result += digit * place_value;
+            place_value *= Base;
+        }
+
+        return result;
+    }
+};
+
+} // namespace dtoa
+
 class StringConversion
 {
 public:
@@ -266,20 +504,34 @@ private:
 
     static char digit_to_char(uint32_t digit)
     {
-        if (digit < 10)
-            return static_cast<char>('0' + digit);
-        return static_cast<char>('a' + (digit - 10));
+        try
+        {
+            return dtoa::digit_to_char<16>(digit);
+        }
+        catch (const std::exception&)
+        {
+            if (digit < 10)
+                return static_cast<char>('0' + digit);
+            return static_cast<char>('a' + (digit - 10));
+        }
     }
 
     static uint32_t char_to_digit(char c)
     {
-        if (std::isdigit(c))
-            return static_cast<uint32_t>(c - '0');
-        if (std::islower(c))
-            return static_cast<uint32_t>(c - 'a' + 10);
-        if (std::isupper(c))
-            return static_cast<uint32_t>(c - 'A' + 10);
-        return 0; // Should not reach here if isxdigit check is used before
+        try
+        {
+            return dtoa::char_to_digit<16>(c);
+        }
+        catch (const std::exception&)
+        {
+            if (std::isdigit(c))
+                return static_cast<uint32_t>(c - '0');
+            if (std::islower(c))
+                return static_cast<uint32_t>(c - 'a' + 10);
+            if (std::isupper(c))
+                return static_cast<uint32_t>(c - 'A' + 10);
+            return 0;
+        }
     }
 };
 
