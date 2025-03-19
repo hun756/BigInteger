@@ -535,6 +535,30 @@ private:
     }
 };
 
+class BitManipulation
+{
+public:
+    template <typename T>
+    static int count_leading_zeros(T value) noexcept
+    {
+        if (value == 0)
+            return std::numeric_limits<T>::digits;
+
+        if constexpr (sizeof(T) <= sizeof(unsigned int))
+        {
+            return std::countl_zero(static_cast<unsigned int>(value));
+        }
+        else if constexpr (sizeof(T) <= sizeof(unsigned long))
+        {
+            return std::countl_zero(static_cast<unsigned long>(value));
+        }
+        else
+        {
+            return std::countl_zero(static_cast<unsigned long long>(value));
+        }
+    }
+};
+
 } // namespace detail
 
 } // namespace Numerics
