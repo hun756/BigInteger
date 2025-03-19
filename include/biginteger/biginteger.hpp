@@ -620,6 +620,21 @@ public:
     }
 };
 
+class ArithmeticOperations
+{
+public:
+    template <typename T>
+    static std::tuple<T, T, T> extended_gcd(T a, T b)
+    {
+        static_assert(std::is_integral_v<T>, "T must be integral type");
+        if (b == T(0))
+            return {a, T(1), T(0)};
+
+        auto [gcd, x, y] = extended_gcd(b, a % b);
+        return {gcd, y, x - (a / b) * y};
+    }
+};
+
 } // namespace detail
 
 } // namespace Numerics
