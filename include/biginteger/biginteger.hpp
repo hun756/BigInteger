@@ -11,7 +11,6 @@
 #include <string_view>
 #include <vector>
 
-
 namespace Numerics
 {
 
@@ -741,6 +740,41 @@ public:
         }
 
         return true;
+    }
+};
+
+class NewtonRaphsonDivision
+{
+public:
+    template <typename T>
+    static T reciprocal_estimate(const T& x, int precision)
+    {
+        static_assert(std::is_floating_point_v<T>, "T must be floating point type");
+        T guess = T(1.0) / x;
+
+        for (int i = 0; i < precision; ++i)
+        {
+            guess = guess * (T(2.0) - x * guess);
+        }
+
+        return guess;
+    }
+
+    template <typename T>
+    static std::pair<T, T> divide_with_remainder(const T& dividend, const T& divisor)
+    {
+        static_assert(std::is_floating_point_v<T>, "T must be floating point type");
+        if (divisor == T(0))
+            throw std::domain_error("Division by zero");
+
+        T reciprocal = reciprocal_estimate(divisor, 5);
+
+        T quotient = dividend * reciprocal;
+        T int_quotient = std::floor(quotient);
+
+        T remainder = dividend - int_quotient * divisor;
+
+        return {int_quotient, remainder};
     }
 };
 
