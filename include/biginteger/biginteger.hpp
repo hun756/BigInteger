@@ -557,6 +557,26 @@ public:
             return std::countl_zero(static_cast<unsigned long long>(value));
         }
     }
+
+    template <typename T>
+    static int count_trailing_zeros(T value) noexcept
+    {
+        if (value == 0)
+            return std::numeric_limits<T>::digits;
+
+        if constexpr (sizeof(T) <= sizeof(unsigned int))
+        {
+            return std::countr_zero(static_cast<unsigned int>(value));
+        }
+        else if constexpr (sizeof(T) <= sizeof(unsigned long))
+        {
+            return std::countr_zero(static_cast<unsigned long>(value));
+        }
+        else
+        {
+            return std::countr_zero(static_cast<unsigned long long>(value));
+        }
+    }
 };
 
 } // namespace detail
