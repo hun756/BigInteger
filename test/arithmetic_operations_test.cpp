@@ -37,3 +37,24 @@ TEST(ArithmeticOperationsTest, ExtendedGCD)
     EXPECT_EQ(gcd7, 9);
     EXPECT_EQ(123456789 * x7 + 987654321 * y7, gcd7);
 }
+
+TEST(ArithmeticOperationsTest, ModularMultiply)
+{
+    using namespace Numerics::detail;
+
+    EXPECT_EQ(ArithmeticOperations::modular_multiply<int>(3, 5, 13), 15 % 13);
+    EXPECT_EQ(ArithmeticOperations::modular_multiply<int>(7, 8, 13), 56 % 13);
+
+    EXPECT_EQ(ArithmeticOperations::modular_multiply<int>(0, 10, 13), 0);
+    EXPECT_EQ(ArithmeticOperations::modular_multiply<int>(10, 0, 13), 0);
+
+    EXPECT_EQ(ArithmeticOperations::modular_multiply<int>(12, 5, 13), (12 * 5) % 13);
+
+    EXPECT_EQ(ArithmeticOperations::modular_multiply<int>(15, 16, 13), (15 % 13 * 16 % 13) % 13);
+
+    EXPECT_EQ(ArithmeticOperations::modular_multiply<int64_t>(123456789LL, 987654321LL, 13LL), 4LL);
+
+    EXPECT_EQ(ArithmeticOperations::modular_multiply<int>(123, 456, 997), (123 * 456) % 997);
+
+    EXPECT_EQ(ArithmeticOperations::modular_multiply<int>(123, 456, 100000), (123 * 456) % 100000);
+}

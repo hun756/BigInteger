@@ -633,6 +633,26 @@ public:
         auto [gcd, x, y] = extended_gcd(b, a % b);
         return {gcd, y, x - (a / b) * y};
     }
+
+    template <typename T>
+    static T modular_multiply(T a, T b, T modulus)
+    {
+        static_assert(std::is_integral_v<T>, "T must be integral type");
+        T result = 0;
+        a %= modulus;
+
+        while (b > 0)
+        {
+            if (b & 1)
+            {
+                result = (result + a) % modulus;
+            }
+            a = (a + a) % modulus;
+            b >>= 1;
+        }
+
+        return result;
+    }
 };
 
 } // namespace detail
