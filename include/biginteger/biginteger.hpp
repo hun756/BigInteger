@@ -5,10 +5,12 @@
 #include <biginteger/hex_conversion.hpp>
 #include <concepts>
 #include <cstdint>
+#include <random>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 #include <vector>
+
 
 namespace Numerics
 {
@@ -617,6 +619,128 @@ public:
     static T clear_rightmost_one(T value) noexcept
     {
         return value & (value - 1);
+    }
+};
+
+class ArithmeticOperations
+{
+public:
+    template <typename T>
+    static std::tuple<T, T, T> extended_gcd(T a, T b)
+    {
+        static_assert(std::is_integral_v<T>, "T must be integral type");
+        if (b == T(0))
+            return {a, T(1), T(0)};
+
+        auto [gcd, x, y] = extended_gcd(b, a % b);
+        return {gcd, y, x - (a / b) * y};
+    }
+
+    template <typename T>
+    static T modular_multiply(T a, T b, T modulus)
+    {
+        static_assert(std::is_integral_v<T>, "T must be integral type");
+        T result = 0;
+        a %= modulus;
+
+        while (b > 0)
+        {
+            if (b & 1)
+            {
+                result = (result + a) % modulus;
+            }
+            a = (a + a) % modulus;
+            b >>= 1;
+        }
+
+        return result;
+    }
+
+    template <typename T>
+    static T modular_inverse(T a, T m)
+    {
+        static_assert(std::is_integral_v<T>, "T must be integral type");
+        T gcd, x, y;
+        std::tie(gcd, x, y) = extended_gcd(a, m);
+        if (gcd != 1)
+        {
+            return 0;
+        }
+        else
+        {
+            return (x % m + m) % m;
+        }
+    }
+
+    template <typename T>
+    static T modular_pow(T base, T exponent, T modulus)
+    {
+        static_assert(std::is_integral_v<T>, "T must be integral type");
+        T result = 1;
+        base %= modulus;
+
+        while (exponent > 0)
+        {
+            if (exponent & 1)
+            {
+                result = modular_multiply(result, base, modulus);
+            }
+            base = modular_multiply(base, base, modulus);
+            exponent >>= 1;
+        }
+
+        return result;
+    }
+
+    template <typename T>
+    static bool is_prime_miller_rabin(const T& n, int iterations = 20)
+    {
+        static_assert(std::is_integral_v<T>, "T must be integral type");
+        if (n <= 1 || n == 4)
+            return false;
+        if (n <= 3)
+            return true;
+        if (n % 2 == 0)
+            return false;
+
+        T d = n - 1;
+        int r = 0;
+        while ((d & 1) == 0)
+        {
+            d >>= 1;
+            r++;
+        }
+
+        std::random_device rd;
+        std::mt19937_64 gen(rd());
+        std::uniform_int_distribution<T> distrib(2, n - 2);
+
+        for (int i = 0; i < iterations; i++)
+        {
+            T a = distrib(gen);
+            T x = modular_pow(a, d, n);
+
+            if (x == 1 || x == n - 1)
+                continue;
+
+            bool composite = true;
+            for (int j = 0; j < r - 1; j++)
+            {
+                x = modular_multiply(x, x, n);
+                if (x == 1)
+                    return false;
+                if (x == n - 1)
+                {
+                    composite = false;
+                    break;
+                }
+            }
+
+            if (composite)
+                return false;
+        }
+
+        return true;
     }
 };
 
