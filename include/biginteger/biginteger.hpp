@@ -606,6 +606,18 @@ public:
         }
         return result;
     }
+
+    template <typename T>
+    static T isolate_rightmost_one(T value) noexcept
+    {
+        return value & (-value);
+    }
+
+    template <typename T>
+    static T clear_rightmost_one(T value) noexcept
+    {
+        return value & (value - 1);
+    }
 };
 
 } // namespace detail

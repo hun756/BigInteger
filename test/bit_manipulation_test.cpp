@@ -99,3 +99,57 @@ TEST(BitManipulationTest, ReverseBits)
     EXPECT_EQ(BitManipulation::reverse_bits<uint16_t>(0x1234), 0x2C48);
     EXPECT_EQ(BitManipulation::reverse_bits<uint32_t>(0x12345678), 0x1E6A2C48);
 }
+
+TEST(BitManipulationTest, RightmostBitOperations)
+{
+    using namespace Numerics::detail;
+
+    EXPECT_EQ(BitManipulation::isolate_rightmost_one<uint32_t>(0), 0);
+    EXPECT_EQ(BitManipulation::clear_rightmost_one<uint32_t>(0), 0);
+
+    // Rightmost one is at bit 0
+    EXPECT_EQ(BitManipulation::isolate_rightmost_one<uint32_t>(1), 1);
+    // Rightmost one is at bit 1
+    EXPECT_EQ(BitManipulation::isolate_rightmost_one<uint32_t>(2), 2);
+    // Rightmost one is at bit 2
+    EXPECT_EQ(BitManipulation::isolate_rightmost_one<uint32_t>(4), 4);
+    // Rightmost one is at bit 31
+    EXPECT_EQ(BitManipulation::isolate_rightmost_one<uint32_t>(0x80000000), 0x80000000);
+
+    // Clearing bit 0 gives 0
+    EXPECT_EQ(BitManipulation::clear_rightmost_one<uint32_t>(1), 0);
+    // Clearing bit 1 gives 0
+    EXPECT_EQ(BitManipulation::clear_rightmost_one<uint32_t>(2), 0);
+    // Clearing bit 2 gives 0
+    EXPECT_EQ(BitManipulation::clear_rightmost_one<uint32_t>(4), 0);
+    // Clearing bit 31 gives 0
+    EXPECT_EQ(BitManipulation::clear_rightmost_one<uint32_t>(0x80000000), 0);
+
+    // 11 -> 01 (isolate bit 0)
+    EXPECT_EQ(BitManipulation::isolate_rightmost_one<uint32_t>(3), 1);
+    // 110 -> 010 (isolate bit 1)
+    EXPECT_EQ(BitManipulation::isolate_rightmost_one<uint32_t>(6), 2);
+    // 1111 -> 0001 (isolate bit 0)
+    EXPECT_EQ(BitManipulation::isolate_rightmost_one<uint32_t>(15), 1);
+    // 1010 -> 0010 (isolate bit 1)
+    EXPECT_EQ(BitManipulation::isolate_rightmost_one<uint32_t>(10), 2);
+
+    // 11 -> 10 (clear bit 0)
+    EXPECT_EQ(BitManipulation::clear_rightmost_one<uint32_t>(3), 2);
+    // 110 -> 100 (clear bit 1)
+    EXPECT_EQ(BitManipulation::clear_rightmost_one<uint32_t>(6), 4);
+    // 1111 -> 1110 (clear bit 0)
+    EXPECT_EQ(BitManipulation::clear_rightmost_one<uint32_t>(15), 14);
+    // 1010 -> 1000 (clear bit 1)
+    EXPECT_EQ(BitManipulation::clear_rightmost_one<uint32_t>(10), 8);
+
+    // 00010010 -> 00000010
+    EXPECT_EQ(BitManipulation::isolate_rightmost_one<uint8_t>(0x12), 0x02);
+    // 0001001000110100 -> 0001001000110000
+    EXPECT_EQ(BitManipulation::clear_rightmost_one<uint16_t>(0x1234), 0x1230);
+
+    // 10101010... -> 00000010
+    EXPECT_EQ(BitManipulation::isolate_rightmost_one<uint32_t>(0xAAAAAAAA), 0x2);
+    // 01010101... -> 01010100...
+    EXPECT_EQ(BitManipulation::clear_rightmost_one<uint32_t>(0x55555555), 0x55555554);
+}
