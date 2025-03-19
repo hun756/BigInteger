@@ -66,3 +66,36 @@ TEST(BitManipulationTest, PopulationCount)
 
     EXPECT_EQ(BitManipulation::population_count<uint32_t>(0xFFFFFFFF), 32);
 }
+
+TEST(BitManipulationTest, ReverseBits)
+{
+    using namespace Numerics::detail;
+
+    EXPECT_EQ(BitManipulation::reverse_bits<uint8_t>(0), 0);
+
+    // 00000001 -> 10000000
+    EXPECT_EQ(BitManipulation::reverse_bits<uint8_t>(0x01), 0x80);
+    // 10000000 -> 00000001
+    EXPECT_EQ(BitManipulation::reverse_bits<uint8_t>(0x80), 0x01);
+
+    // 01010101 -> 10101010
+    EXPECT_EQ(BitManipulation::reverse_bits<uint8_t>(0x55), 0xAA);
+    // 10101010 -> 01010101
+    EXPECT_EQ(BitManipulation::reverse_bits<uint8_t>(0xAA), 0x55);
+
+    // 00010010 -> 01001000
+    EXPECT_EQ(BitManipulation::reverse_bits<uint8_t>(0x12), 0x48);
+    // 11110000 -> 00001111
+    EXPECT_EQ(BitManipulation::reverse_bits<uint8_t>(0xF0), 0x0F);
+
+    // 11111111 -> 11111111
+    EXPECT_EQ(BitManipulation::reverse_bits<uint8_t>(0xFF), 0xFF);
+
+    // 16-bit/32bit reversal
+    EXPECT_EQ(BitManipulation::reverse_bits<uint16_t>(0x0001), 0x8000);
+    EXPECT_EQ(BitManipulation::reverse_bits<uint32_t>(0x00000001), 0x80000000);
+
+    // 0001001000110100 -> 0010110001001000
+    EXPECT_EQ(BitManipulation::reverse_bits<uint16_t>(0x1234), 0x2C48);
+    EXPECT_EQ(BitManipulation::reverse_bits<uint32_t>(0x12345678), 0x1E6A2C48);
+}

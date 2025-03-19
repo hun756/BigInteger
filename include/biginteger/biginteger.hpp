@@ -594,6 +594,18 @@ public:
             return std::popcount(static_cast<unsigned long long>(value));
         }
     }
+
+    template <typename T>
+    static T reverse_bits(T value) noexcept
+    {
+        T result = 0;
+        for (int i = 0; i < std::numeric_limits<T>::digits; ++i)
+        {
+            result = (result << 1) | (value & 1);
+            value >>= 1;
+        }
+        return result;
+    }
 };
 
 } // namespace detail
