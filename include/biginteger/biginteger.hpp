@@ -577,6 +577,23 @@ public:
             return std::countr_zero(static_cast<unsigned long long>(value));
         }
     }
+
+    template <typename T>
+    static int population_count(T value) noexcept
+    {
+        if constexpr (sizeof(T) <= sizeof(unsigned int))
+        {
+            return std::popcount(static_cast<unsigned int>(value));
+        }
+        else if constexpr (sizeof(T) <= sizeof(unsigned long))
+        {
+            return std::popcount(static_cast<unsigned long>(value));
+        }
+        else
+        {
+            return std::popcount(static_cast<unsigned long long>(value));
+        }
+    }
 };
 
 } // namespace detail

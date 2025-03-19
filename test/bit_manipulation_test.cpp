@@ -42,3 +42,27 @@ TEST(BitManipulationTest, CountTrailingZeros)
     // Binary: ...1111 0000
     EXPECT_EQ(BitManipulation::count_trailing_zeros<uint32_t>(0xF0), 4);
 }
+
+TEST(BitManipulationTest, PopulationCount)
+{
+    using namespace Numerics::detail;
+
+    EXPECT_EQ(BitManipulation::population_count<uint32_t>(0), 0);
+
+    EXPECT_EQ(BitManipulation::population_count<uint32_t>(1), 1);
+    EXPECT_EQ(BitManipulation::population_count<uint32_t>(2), 1);
+    EXPECT_EQ(BitManipulation::population_count<uint32_t>(4), 1);
+    EXPECT_EQ(BitManipulation::population_count<uint32_t>(0x80000000), 1);
+
+    EXPECT_EQ(BitManipulation::population_count<uint32_t>(0xFF), 8);
+    EXPECT_EQ(BitManipulation::population_count<uint32_t>(0xF0F0), 8);
+    EXPECT_EQ(BitManipulation::population_count<uint32_t>(0xAAAAAAAA), 16);
+    EXPECT_EQ(BitManipulation::population_count<uint32_t>(0x55555555), 16);
+
+    // Binary: 01010101
+    EXPECT_EQ(BitManipulation::population_count<uint8_t>(0x55), 4);
+    EXPECT_EQ(BitManipulation::population_count<uint16_t>(0xFFFF), 16);
+    EXPECT_EQ(BitManipulation::population_count<uint64_t>(0x8000000000000000), 1);
+
+    EXPECT_EQ(BitManipulation::population_count<uint32_t>(0xFFFFFFFF), 32);
+}
