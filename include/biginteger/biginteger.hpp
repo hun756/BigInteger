@@ -653,6 +653,22 @@ public:
 
         return result;
     }
+
+    template <typename T>
+    static T modular_inverse(T a, T m)
+    {
+        static_assert(std::is_integral_v<T>, "T must be integral type");
+        T gcd, x, y;
+        std::tie(gcd, x, y) = extended_gcd(a, m);
+        if (gcd != 1)
+        {
+            return 0;
+        }
+        else
+        {
+            return (x % m + m) % m;
+        }
+    }
 };
 
 } // namespace detail

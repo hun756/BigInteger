@@ -58,3 +58,36 @@ TEST(ArithmeticOperationsTest, ModularMultiply)
 
     EXPECT_EQ(ArithmeticOperations::modular_multiply<int>(123, 456, 100000), (123 * 456) % 100000);
 }
+
+TEST(ArithmeticOperationsTest, ModularInverse)
+{
+    using namespace Numerics::detail;
+
+    EXPECT_EQ(ArithmeticOperations::modular_inverse<int>(3, 11), 4);
+    EXPECT_EQ(ArithmeticOperations::modular_inverse<int>(7, 15), 13);
+
+    EXPECT_EQ((3 * ArithmeticOperations::modular_inverse<int>(3, 11)) % 11, 1);
+    EXPECT_EQ((7 * ArithmeticOperations::modular_inverse<int>(7, 15)) % 15, 1);
+
+    EXPECT_EQ(ArithmeticOperations::modular_inverse<int>(4, 8), 0);
+    EXPECT_EQ(ArithmeticOperations::modular_inverse<int>(6, 9), 0);
+
+    EXPECT_EQ(ArithmeticOperations::modular_inverse<int>(1, 5), 1);
+
+    int inv_neg = ArithmeticOperations::modular_inverse<int>(-5, 11);
+
+    EXPECT_EQ(((-5 * inv_neg) % 11 + 11) % 11, 1);
+
+    int inv_large = ArithmeticOperations::modular_inverse<int>(101, 997);
+    EXPECT_EQ((101 * inv_large) % 997, 1);
+
+    int64_t large_num = 123456789;
+    int64_t large_mod = 1000000007;
+    int64_t large_inv = ArithmeticOperations::modular_inverse<int64_t>(large_num, large_mod);
+    EXPECT_EQ((large_num * large_inv) % large_mod, 1);
+
+    int a = 17, m = 101;
+    int inv_a = ArithmeticOperations::modular_inverse<int>(a, m);
+    EXPECT_NE(inv_a, 0);
+    EXPECT_EQ((a * inv_a) % m, 1);
+}
