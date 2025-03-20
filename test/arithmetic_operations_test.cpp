@@ -1,6 +1,5 @@
 #include <biginteger/biginteger.hpp>
 #include <gtest/gtest.h>
-#include <tuple>
 
 TEST(ArithmeticOperationsTest, ExtendedGCD)
 {

@@ -1,7 +1,6 @@
 #include <biginteger/biginteger.hpp>
 #include <gtest/gtest.h>
 #include <memory>
-#include <mutex>
 #include <thread>
 #include <vector>
 

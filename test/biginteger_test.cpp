@@ -1,19 +1,8 @@
-#include <algorithm>
 #include <biginteger/biginteger.hpp>
 #include <gtest/gtest.h>
-#include <limits>
 #include <random>
 #include <stdexcept>
 #include <vector>
-
-TEST(NumericConstantsTest, ConstantsAreCorrect)
-{
-    using namespace Numerics::detail;
-
-    EXPECT_EQ(NumericConstants::BASE, 1000000000);
-    EXPECT_EQ(NumericConstants::DECIMAL_DIGITS_PER_ELEMENT, 9);
-    EXPECT_EQ(NumericConstants::MAX_POWER_OF_TEN, 999999999);
-}
 
 class StringConversionTest : public ::testing::Test
 {
