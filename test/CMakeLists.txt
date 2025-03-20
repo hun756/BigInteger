@@ -8,6 +8,7 @@ set(TEST_SOURCES
     arithmetic_operations_test.cpp
     newton_raphson_division_test.cpp
     memory_manager_test.cpp
+    string_conversion_test.cpp
 )
 
 foreach(test_source ${TEST_SOURCES})
