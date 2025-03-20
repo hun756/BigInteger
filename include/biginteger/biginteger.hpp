@@ -5,6 +5,8 @@
 #include <biginteger/hex_conversion.hpp>
 #include <concepts>
 #include <cstdint>
+#include <list>
+#include <mutex>
 #include <random>
 #include <stdexcept>
 #include <string>
@@ -776,6 +778,116 @@ public:
 
         return {int_quotient, remainder};
     }
+};
+
+template <typename T>
+class MemoryManager
+{
+public:
+    static constexpr size_t BLOCK_SIZE = 4096;
+    static constexpr size_t ALIGNMENT = 64;
+
+    static T* allocate_aligned(size_t n)
+    {
+        size_t size = n * sizeof(T);
+        size = (size + ALIGNMENT - 1) & ~(ALIGNMENT - 1);
+        void* ptr = nullptr;
+
+#ifdef _WIN32
+        ptr = _aligned_malloc(size, ALIGNMENT);
+        if (!ptr)
+        {
+            throw std::bad_alloc();
+        }
+#else
+        if (posix_memalign(&ptr, ALIGNMENT, size) != 0)
+        {
+            throw std::bad_alloc();
+        }
+#endif
+
+        return static_cast<T*>(ptr);
+    }
+
+    static void deallocate_aligned(T* ptr)
+    {
+#ifdef _WIN32
+        _aligned_free(ptr);
+#else
+        std::free(ptr);
+#endif
+    }
+
+    class Pool
+    {
+    private:
+        struct Block
+        {
+            std::unique_ptr<T[]> data;
+            size_t size;
+            bool in_use;
+
+            Block(size_t s) : data(new T[s]), size(s), in_use(false) {}
+        };
+
+        std::list<Block> blocks_;
+        std::mutex mutex_;
+
+    public:
+        struct BlockDeleter
+        {
+            Pool* pool;
+            typename std::list<Block>::iterator block_it;
+
+            BlockDeleter(Pool* p, typename std::list<Block>::iterator it) : pool(p), block_it(it) {}
+
+            void operator()(T* _)
+            {
+                if (pool)
+                {
+                    pool->release(block_it);
+                }
+            }
+        };
+
+        Pool(size_t initial_blocks = 8)
+        {
+            for (size_t i = 0; i < initial_blocks; ++i)
+            {
+                blocks_.emplace_back(BLOCK_SIZE);
+            }
+        }
+
+        std::unique_ptr<T[], BlockDeleter> acquire(size_t size)
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+
+            for (auto it = blocks_.begin(); it != blocks_.end(); ++it)
+            {
+                if (!it->in_use && it->size >= size)
+                {
+                    it->in_use = true;
+                    return std::unique_ptr<T[], BlockDeleter>(it->data.get(),
+                                                              BlockDeleter(this, it));
+                }
+            }
+
+            blocks_.emplace_back(size);
+            auto it = std::prev(blocks_.end());
+            it->in_use = true;
+
+            return std::unique_ptr<T[], BlockDeleter>(it->data.get(), BlockDeleter(this, it));
+        }
+
+    private:
+        void release(typename std::list<Block>::iterator block_it)
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            block_it->in_use = false;
+        }
+
+        friend struct BlockDeleter;
+    };
 };
 
 } // namespace detail
