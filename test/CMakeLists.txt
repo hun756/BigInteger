@@ -7,6 +7,7 @@ set(TEST_SOURCES
     bit_manipulation_test.cpp
     arithmetic_operations_test.cpp
     newton_raphson_division_test.cpp
+    memory_manager_test.cpp
 )
 
 foreach(test_source ${TEST_SOURCES})
